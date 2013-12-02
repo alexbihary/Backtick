@@ -1,3 +1,8 @@
+try
+  aws = require "./auth/aws"
+catch e
+  aws = {}
+
 config =
   watch:
     coffee:
@@ -209,9 +214,36 @@ config =
       "coffee"
     ]
 
+  s3:
+    options:
+      key: aws.key
+      secret: aws.secret
+      bucket: aws.bucket
+      access: "public-read"
+      gzip: true
+
+    dist:
+      upload: [
+        src: "commands.json",
+        dest: "commands.json"
+      ,
+        src: "commands.json"
+        dest: "commands#{Date.now()}.json"
+      ]
+
+  compress:
+    main:
+      options:
+        archive: "bin/backtick.zip"
+
+      files: [
+        src: ["dist/**"]
+      ]
+
 module.exports = (grunt) ->
   require("time-grunt") grunt
   require("load-grunt-tasks") grunt
+  require("./tasks/build-commands") grunt
 
   grunt.initConfig config
 
@@ -234,6 +266,16 @@ module.exports = (grunt) ->
     "concurrent:dist"
     "copy"
     "requirejs"
+  ]
+
+  grunt.registerTask "package", [
+    "build"
+    "compress"
+  ]
+
+  grunt.registerTask "upload-commands", [
+    "build-commands",
+    "s3"
   ]
 
   grunt.registerTask "default", [

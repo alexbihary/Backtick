@@ -19,7 +19,6 @@ define [
     rawTemplate: template
 
     events:
-      "keydown": "onKeyDown"
       "click .settings": "openSettings"
 
     initialize: ->
@@ -30,6 +29,8 @@ define [
       @keepFocused()
       @escapeClose()
 
+      document.addEventListener "keydown", @onKeyDown, true
+
       App.on "load.commands sync.commands",  =>
         return unless @$input
         return unless @$input?.val()
@@ -37,15 +38,15 @@ define [
         App.trigger "command:search", @$input.val(), true
 
       App.on
-        "close": @close.bind this
-        "open": @open.bind this
+        "close": @close
+        "open": @open
         "fetch.commands": @displayName.bind this
 
-    open: ->
+    open: =>
       @$input.val ""
       @in()
 
-    close: ->
+    close: =>
       @out()
       @once "out", => @$input.blur()
 
@@ -54,14 +55,14 @@ define [
       @$input = @$ "input"
       this
 
-    focus: ->
+    focus: =>
       @$input.focus()
       this
 
     keepFocused: ->
-      @on "in", @focus.bind(this)
+      @on "in", @focus
       @$input.on "blur", =>
-        _.defer @focus.bind(this) if App.open
+        _.defer(@focus) if App.open
 
     escapeClose: ->
       $(document).on "keyup", (e) ->
@@ -73,7 +74,9 @@ define [
     openSettings: ->
       Extension.trigger "open.settings"
 
-    onKeyDown: (e) ->
+    onKeyDown: (e) =>
+      return unless App.open
+      e.stopPropagation()
       preventDefault = true
       unless App.loading
         switch e.which
